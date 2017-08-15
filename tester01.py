@@ -31,7 +31,7 @@ def loop():
     
     for x in range(procCount):
         marq += "    Core {0}: {1}%\n".format(x, procUse[x])
-    marq += "Installed RAM: {0} MB".format(totalMem)
+    marq += "Installed RAM: {0:,.0f} MB".format(totalMem)
 
     #print("Cores: {0}\nProcessor use: {1}\nTotal Installed RAM: {2} MB".format(procCount, procUse, totalMem))
     print(marq)
