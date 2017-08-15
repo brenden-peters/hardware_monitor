@@ -5,6 +5,7 @@ mem = pea.virtual_memory()    ## processor and memory won't ever (!!!) be change
 parts = pea.disk_partitions() ## hot-plugging drives on the relavent systems. 
                               ##    Still, note to self: filter out removable media/just update drives in loop? 
 
+count = 0 
 
 def main():
     global count
