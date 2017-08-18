@@ -3,8 +3,9 @@ import psutil as pea
 procCount = pea.cpu_count()   ## These three values should remain static in my use cases; 
 mem = pea.virtual_memory()    ## processor and memory won't ever (!!!) be changed, and I won't likely be 
 parts = pea.disk_partitions() ## hot-plugging drives on the relavent systems. 
-                              ##    Still, note to self: filter out removable media/just update drives in loop? 
-
+                              ##    Still, note to self: filter out removable media/just update drives in loop?
+                               
+lines = 0                     ## keeps track of # of lines printed to console                              
 count = 0 
 
 def main():
@@ -15,6 +16,9 @@ def main():
     
     
 def loop():
+    for i in range(lines):
+        print("\e[1A")
+        print("\r")
     global procCount
     global mem
     global parts
