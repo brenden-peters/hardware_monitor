@@ -21,8 +21,7 @@ class mainFrame(QWidget):
         
     def initUI(self):
         QToolTip.setFont(QFont('SansSerif', 10))
-        self.setToolTip('Close window or click <i>Exit</i> to close application.')
-        #self.statusBar().showMessage('Ready')
+        self.setToolTip('Ceci n\'est pas un fenêtre.')
         
         okBtn = QPushButton("OK")
         cancelBtn = QPushButton("Cancel")
@@ -38,11 +37,11 @@ class mainFrame(QWidget):
         
         self.setLayout(vbox)
         
-        quitBtn = QPushButton('Exit', self)
-        quitBtn.clicked.connect(QCoreApplication.instance().quit)
-        quitBtn.setToolTip('Click here to close application.')
-        quitBtn.resize(quitBtn.sizeHint())
-        quitBtn.move(150, 50)
+        #quitBtn = QPushButton('Exit', self)
+        #quitBtn.clicked.connect(QCoreApplication.instance().quit)
+        #quitBtn.setToolTip('Click here to close application.')
+        #quitBtn.resize(quitBtn.sizeHint())
+        #quitBtn.move(150, 50)
         
         #self.setWindowTitle('Main Frame')
         #self.sizeCenter()
@@ -58,26 +57,8 @@ class ooWin(QMainWindow):
         QToolTip.setFont(QFont('SansSerif', 10))
         self.setToolTip('Close window or click <i>Exit</i> to close application.')
         #self.statusBar().showMessage('Ready')
-        
-        okBtn = QPushButton("OK")
-        cancelBtn = QPushButton("Cancel")
-        
-        hbox = QHBoxLayout()
-        hbox.addStretch(1)
-        hbox.addWidget(okBtn)
-        hbox.addWidget(cancelBtn)
-        
-        vbox = QVBoxLayout()
-        vbox.addStretch(1)
-        vbox.addLayout(hbox)
-        
-        self.setLayout(vbox)
-        
-        quitBtn = QPushButton('Exit', self)
-        quitBtn.clicked.connect(QCoreApplication.instance().quit)
-        quitBtn.setToolTip('Click here to close application.')
-        quitBtn.resize(quitBtn.sizeHint())
-        quitBtn.move(150, 50)
+        self.mainerFramer = mainFrame()
+        self.setCentralWidget(self.mainerFramer)
         
         #exitAct = QAction(QIcon('exit.png'),'&Close Application', self)
         exitAct = QAction('&Close Application', self)
@@ -85,7 +66,7 @@ class ooWin(QMainWindow):
         exitAct.setStatusTip('Exit application')
         exitAct.triggered.connect(qApp.quit)
         
-        self.statusBar()
+        #self.statusBar()
         
         menubar = self.menuBar()
         fileMenu = menubar.addMenu('&File')
