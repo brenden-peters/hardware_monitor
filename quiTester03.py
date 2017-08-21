@@ -44,10 +44,11 @@ class ooWin(QWidget):
         self.setGeometry(400, 200, winWid, winHi)
         self.setWindowTitle('Test Window 02')
         self.center()
-        ##self.setWindowIcon(QIcon('web.png'))
         self.show()
         
     def center(self):
+        screen = self.primaryScreen()
+        print(screen)
         qr = self.frameGeometry()
         cp = QDesktopWidget().availableGeometry().center()
         qr.moveCenter(cp)
@@ -68,17 +69,3 @@ if __name__ == '__main__':
     oow = ooWin()
     sys.exit(app.exec_())
     
-    
-#    w = QWidget()
-#    ## if commandline args given, 1: squar 2: rect 0: default
-#    if (len(sys.argv) > 1):
-#        winWid = int(sys.argv[1])
-#        winHi = int(sys.argv[1])
-#        if (len(sys.argv) > 2):
-#            winHi = int(sys.argv[2])
-#    w.resize(winWid, winHi)
-#    w.move(400, 200)
-#    w.setWindowTitle('Test Window 01')
-#    w.show()
-#    
-#    sys.exit(app.exec_())
