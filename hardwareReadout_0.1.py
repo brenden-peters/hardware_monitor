@@ -5,7 +5,7 @@
 
 import sys
 import psutil as pea
-from time import sleep
+from time import sleep, time
 from PyQt5.QtWidgets import (QApplication, QToolTip, 
     QPushButton, QApplication, QMessageBox, QDesktopWidget, 
     QMainWindow, QAction, qApp, QWidget, QHBoxLayout, 
@@ -18,19 +18,22 @@ font = 'SansSerif'  ## GUI font
 ptSize = 15         ## GUI font size
 updateRate = 750    ## GUI base refresh rate in ms (some functions may update between clocked refreshes)
 windowScale = 0.125 ## Ratio of application window to screen size; 
-                    ## half the width and half the height = one quarter overall size                   
-gb = 1073741824     ## Divide a # of bytes by this to get the # of gigabytes
-mb = 1048576
-kb = 1024
-storMult = mb       ## Display storage info in units of megabytes, gigabytes, etc.
+                    ##   half the width and half the height = one quarter overall size                   
+gib = 1073741824    ## Divide a # of bytes by this to get the # of gibibytes
+gb = 1000000000     ## Divide a # of bytes by  this to get the # of gigabytes
+mib = 1048576
+mb = 1000000
+kib = 1024
+storMult = gb       ## Display storage info in units of mibibytes, megabytes, gigabytes, etc.
 
 
 
 procCount = pea.cpu_count(logical=False)                   
 threadCount = pea.cpu_count(logical=True)    
 mem = pea.virtual_memory()    
-parts = pea.disk_partitions()
+parts = pea.disk_partitions(all = False)
 allTexts = {}
+oldDiskSpeed = {'Read':0, 'Write':0, 'time':0}
 printerText = ''
                    
 
@@ -65,12 +68,7 @@ class mainFrame(QWidget):
         #quitBtn.move(150, 50)
         
         self.infoThread = infoGetter()
-        #getter = infoGetter()
         self.infoThread.start()
-        #getter.start()
-        #self.infoThread.curInfo.connect(self.infoThread, self.infoThread.curInfo, self.setText)
-        #getter.curInfo.connect(gettr, gettr.curInfo, self.setText)
-        #self.connect(getter, getter.curInfo, self.setText)
         
         self.show() 
         
@@ -191,11 +189,40 @@ class infoGetter(QThread):
             
             allTexts['Disk'] = ""
             #allTexts['Disk'] += "Disc ish stuff\n"
-            allTexts['Disk'] += "Disk:\n    Total disk space: {0}\n    Used: {1}".format((diskUse[0] / storMult), (diskUse[1] / storMult))
+            #allTexts['Disk'] += "Disk:\n    Total disk space: {0}\n    Used: {1}\n".format((diskUse[0] / storMult), (diskUse[1] / storMult))
+            
             #for x in diskUse:
             #    cap = (x / )
             #    allTexts['Disk'] += "{0}\n".format(cap)
-
+            diskAccess = pea.disk_io_counters()
+            
+            totRead = 0
+            totWrite = 0
+            totTime = 0
+            totRead += (diskAccess.read_bytes / 1000000)   ## Convert bytes to MB
+            totWrite += (diskAccess.write_bytes / 1000000)
+            totTime = time()
+            
+            dRead = (totRead - oldDiskSpeed['Read'])
+            dWrite = (totWrite - oldDiskSpeed['Write'])
+            dTime = (totTime - oldDiskSpeed['time'])    ## Change of time in seconds
+            
+            readRate = (dRead / dTime)
+            writeRate = (dWrite / dTime)
+            oldDiskSpeed['Read'] = totRead
+            oldDiskSpeed['Write'] = totWrite
+            oldDiskSpeed['time'] = totTime
+            
+            allTexts['Disk'] += "Disks:\n    Current Read Speed: {0:.2f} MB/s\n    Current Write Speed: {1:.2f}MB/s\n".format(readRate, writeRate)
+            
+            ## get old/new delta for read, write, divide by time, present for moment to moment xfer speeds
+            ## also fill in the print based on template below
+            
+            diskTemplate = "{}"
+            #print(diskTemplate.format("Device", "Mount", "Total", "Used", "Free", "Filesystem"))
+            
+            
+            ## compare current read/write to old read/write, look at time delta
         
             #oow.mainerFramer.text = allTexts['Processor']
             #oow.mainerFramer.text += allTexts['Memory']
@@ -205,6 +232,7 @@ class infoGetter(QThread):
             curInfText = allTexts['Processor']
             curInfText += allTexts['Memory']
             curInfText += allTexts['Disk']
+            #curInfText += str(parts)
             print(curInfText)
             self.curInfo.emit(curInfText)
             #sleep(1)
