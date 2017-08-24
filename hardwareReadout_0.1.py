@@ -11,65 +11,50 @@ from PyQt5.QtWidgets import (QApplication, QToolTip,
     QMainWindow, QAction, qApp, QWidget, QHBoxLayout, 
     QVBoxLayout, QLabel)
 from PyQt5.QtGui import (QFont, QColor, QPainter)#, QIcon)
-from PyQt5.QtCore import (QCoreApplication, Qt, QThread, pyqtSignal)
+from PyQt5.QtCore import (QCoreApplication, Qt, QThread, pyqtSignal, pyqtSlot, QTimer)
 
-progName = 'Otterlot\'s Hardware Readout v0.1'
+progName = 'Otterlot\'s Hardware Readout v0.2'
+font = 'SansSerif'  ## GUI font
+ptSize = 15         ## GUI font size
+updateRate = 750    ## GUI base refresh rate in ms (some functions may update between clocked refreshes)
 windowScale = 0.125 ## Ratio of application window to screen size; 
-                   ## half the width and half the height = one quarter overall size                   
-                   
-procCount = pea.cpu_count()    
+                    ## half the width and half the height = one quarter overall size                   
+gb = 1073741824     ## Divide a # of bytes by this to get the # of gigabytes
+mb = 1048576
+kb = 1024
+storMult = mb       ## Display storage info in units of megabytes, gigabytes, etc.
+
+
+
+procCount = pea.cpu_count(logical=False)                   
+threadCount = pea.cpu_count(logical=True)    
 mem = pea.virtual_memory()    
 parts = pea.disk_partitions()
 allTexts = {}
-x = True
+printerText = ''
                    
 
 class mainFrame(QWidget):
     
-    curInfo = pyqtSignal(str)
-    
     def __init__(self):
         super().__init__()
-        self.curInfo.connect(self.setText)
         self.initUI()
+        self.timer = QTimer()
+        self.timer.timeout.connect(self.update)
+        self.timer.start(updateRate)
         
     def initUI(self):
         global allTexts
         
         QToolTip.setFont(QFont('SansSerif', 10))
-        #self.setMouseTracking(True)
-        #self.setToolTip('Ceci n\'est pas un fenêtre.')
-        
-        #okBtn = QPushButton("OK")
-        #cancelBtn = QPushButton("Cancel")
-        #self.text = "(x,y): ({0},{1})".format(x, y)
-        
-        #textLayout = QHBoxLayout()
-        #textLayout.setSpacing(10)
-        #textLayout.addStretch(1)
-        #textLayout.addWidget(self.label, 0, Qt.AlignTop)
-        
-        #procLayout = QVBoxLayout()
         allTexts['Processor'] = ""
         allTexts['Memory'] = ""
         
-        #procText = QText('procInfo')
-        #allTexts['Processor'] = QLabel(procText, procLayout)
-        #procLayout.addWidget(allTexts['Processor'], 0, Qt.AlignTop)
-        
         self.text = allTexts['Processor']
         self.text += allTexts['Memory']
-        #self.label = QLabel(self.text, self)
-        #buttonLayout = QHBoxLayout()
-        #buttonLayout.addStretch(1)
-        #buttonLayout.addWidget(okBtn)
-        #buttonLayout.addWidget(cancelBtn)
         
         mainLayout = QVBoxLayout()
-        #mainLayout.addWidget(self.label, 0, Qt.AlignTop)
         mainLayout.addStretch(1)
-        #mainLayout.addLayout(textLayout)
-        #mainLayout.addLayout(buttonLayout)
         
         self.setLayout(mainLayout)
         
@@ -79,30 +64,36 @@ class mainFrame(QWidget):
         #quitBtn.resize(quitBtn.sizeHint())
         #quitBtn.move(150, 50)
         
+        self.infoThread = infoGetter()
+        #getter = infoGetter()
+        self.infoThread.start()
+        #getter.start()
+        #self.infoThread.curInfo.connect(self.infoThread, self.infoThread.curInfo, self.setText)
+        #getter.curInfo.connect(gettr, gettr.curInfo, self.setText)
+        #self.connect(getter, getter.curInfo, self.setText)
+        
         self.show() 
-              
-    def mouseMoveEvent(self, e):
-        x = e.x()
-        y = e.y()
         
-        #self.text = "(x,y): ({0},{1})".format(x, y) 
-        #self.looper()
-        #self.update()
-        
-    def setText(self, ourText):
-        self.text = ourText
-        self.update()
+      
+    #@staticmethod  
+    @pyqtSlot(str)    
+    def setText(ourText):
+        #self.text = ourText
+        global printerText
+        printerText = ourText
+        #mainFrame.update()
+        #mainFrame.update()
         
     def paintEvent(self, event):
         qp = QPainter()
         qp.begin(self)
-        self.drawText(event, qp, self.text)
+        self.drawText(event, qp, printerText)
         qp.end()
         
     def drawText(self, event, qp, ourText):
         qp.setPen(QColor(0, 0, 0))
-        qp.setFont(QFont('SansSerif', 15))
-        qp.drawText(event.rect(), Qt.AlignTop, ourText)#self.text)
+        qp.setFont(QFont(font, ptSize))
+        qp.drawText(event.rect(), Qt.AlignTop, ourText)
 
 class ooWin(QMainWindow):
 
@@ -133,8 +124,8 @@ class ooWin(QMainWindow):
         self.setWindowTitle(progName)
         self.sizeCenter()
         self.show()
-        self.infoThread = infoGetter()
-        self.infoThread.start()
+        #self.infoThread = infoGetter()
+        #self.infoThread.start()
         
     def sizeCenter(self):
         defaultMonitor = QDesktopWidget().screenGeometry(-1)
@@ -145,18 +136,9 @@ class ooWin(QMainWindow):
         winHi = screenHi * (windowScale * 2)
         self.setGeometry((screenWid * 0.5) - (winWid * 0.5), (screenHi * 0.5) - (winHi * 0.5), winWid, winHi)
         
-    def jeQuitte(self):
-        global x
-        #x = False
-        print("jeQuitte checking in!\n")
-        #self.infoThread.stop()
-        self.infoThread.exit(0)
-        #self.infoThread.quit()
-        #self.infoThread.wait()
-        
     def closeEvent(self, event):
-        self.jeQuitte()
         event.accept()    
+        
     #def closeEvent(self, event):
         #reply = QMessageBox.question(self, 'Title bar text here',
         #    "Are you sure you wish to quit?", QMessageBox.Yes | QMessageBox.No,
@@ -169,10 +151,12 @@ class ooWin(QMainWindow):
         
 class infoGetter(QThread):
     
+    curInfo = pyqtSignal(str)
+    
     def __init__(self):
         QThread.__init__(self)
-        #super().__init__(self)
-        self.signal = pyqtSignal("curInfo")
+        #super()
+        self.curInfo.connect(mainFrame.setText)
         
     def __del__(self):
         self.wait()
@@ -185,20 +169,33 @@ class infoGetter(QThread):
         global allTexts
         global mem
         global procCount
-        global x
-        while(x):
+        global threadCount
+        global parts
+        while(True):
+            #procUpdateRate = (updateRate / 1000) # locks processor updates to GUI refresh rate
+            #procUse = pea.cpu_percent(procUpdateRate, True)
             procUse = pea.cpu_percent(0.75, True)
             diskUse = pea.disk_usage('/') #forEach partition get use
             
             totalMem = mem.total/(1024*1024) # in MB
             freeMem = mem.free/(1024*1024)
+            usedMem = totalMem - freeMem
         
             allTexts['Processor'] = ""
-            allTexts['Processor'] += "Processor cores: {0}\n".format(procCount)
-            for x in range(procCount):
-                allTexts['Processor'] += "    Core {0}: {1}%\n".format(x, procUse[x])
+            allTexts['Processor'] += "Physical CPU cores: {0}\n".format(procCount)
+            for x in range(threadCount):
+                allTexts['Processor'] += "    Logical Core {0}: {1}%\n".format(x, procUse[x])
             allTexts['Memory'] = ""
-            allTexts['Memory'] += "Installed RAM: {0:,.0f} MB".format(totalMem)
+            #allTexts['Memory'] += "Installed RAM: {0:,.0f} MB".format(totalMem)
+            allTexts['Memory'] += "RAM: \n    {0:.0f} MB free of total {1:.0f} MB\n".format(freeMem, totalMem)
+            
+            allTexts['Disk'] = ""
+            #allTexts['Disk'] += "Disc ish stuff\n"
+            allTexts['Disk'] += "Disk:\n    Total disk space: {0}\n    Used: {1}".format((diskUse[0] / storMult), (diskUse[1] / storMult))
+            #for x in diskUse:
+            #    cap = (x / )
+            #    allTexts['Disk'] += "{0}\n".format(cap)
+
         
             #oow.mainerFramer.text = allTexts['Processor']
             #oow.mainerFramer.text += allTexts['Memory']
@@ -207,8 +204,9 @@ class infoGetter(QThread):
             
             curInfText = allTexts['Processor']
             curInfText += allTexts['Memory']
-            #self.emit(SIGNAL("curInfo"), curInfText)
-            self.emit(self.signal, curInfText)
+            curInfText += allTexts['Disk']
+            print(curInfText)
+            self.curInfo.emit(curInfText)
             #sleep(1)
 
 
