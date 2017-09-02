@@ -27,6 +27,9 @@ kib = 1024
 storMult = gb       ## Display storage info in units of mibibytes, megabytes, gigabytes, etc.
 
 
+### FIXME: fix this thing 
+## TODO: do this thing 
+# CHANGED: Commenting style has adapted to include TextMate's to-do bundle; chord ctrl-shft-t for colated list
 
 procCount = pea.cpu_count(logical=False)                   
 threadCount = pea.cpu_count(logical=True)    
@@ -223,11 +226,6 @@ class infoGetter(QThread):
             
             
             ## compare current read/write to old read/write, look at time delta
-        
-            #oow.mainerFramer.text = allTexts['Processor']
-            #oow.mainerFramer.text += allTexts['Memory']
-            #oow.mainerFramer.update()
-            ### Replace the above three lines with assignment to single string, then send string as signal to oow
             
             curInfText = allTexts['Processor']
             curInfText += allTexts['Memory']
