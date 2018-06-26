@@ -173,6 +173,7 @@ class infoGetter(QThread):
         global threadCount
         global parts
         while(True):
+            mem = pea.virtual_memory() ## We update every loop to refresh RAM readings
             #procUpdateRate = (updateRate / 1000) # locks processor updates to GUI refresh rate
             #procUse = pea.cpu_percent(procUpdateRate, True)
             procUse = pea.cpu_percent(0.75, True)
