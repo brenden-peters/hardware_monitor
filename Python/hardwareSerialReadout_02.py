@@ -46,7 +46,7 @@ if (os.name == 'nt'):  ## Corrects behavior around Windows' quirks regarding COM
 portsList = list(serial.tools.list_ports.comports())
 for detectedPort in portsList:
     if (usbKeyword in detectedPort[usbIndex]):
-        print "We got one!"
+        print("We got one!")
         serName = detectedPort[0]
 
 if (serName == None):
@@ -58,22 +58,18 @@ global ser
 ser = serial.Serial(serName, 115200, timeout = 1)
 #ser = serial.Serial('/dev/tty.usbmodem1421', 115200, timeout=1)
 print ("Connection established!\n",)
-ser.write("{0:2}Z".format(threadCount))
 sleep(1)
 
 ######### BEGIN HARDWARE
 
 while(True):
-    #ser.write("Hello there from Python.\n")
-    #time.sleep(2)
-    
     mem = pea.virtual_memory() ## We update every loop to refresh RAM readings
     procUse = pea.cpu_percent(0.75, True)
     procAvg = 0
     for x in procUse:
         procAvg += x
-    procAvg = procAvg / 4.
-    print("Processor: {0}".format(procAvg))
+    procAvg = (procAvg / 4.)
+    #print("Processor: {0}".format(procAvg))
     diskUse = pea.disk_usage('/') #forEach partition get use
     
     totalMem = mem.total/(1024*1024) # in MB
@@ -139,7 +135,7 @@ while(True):
         tmpStr += "CPU {0}: {1:2.1f}%,".format((x+1), procUse[x])
     output = ("{0}Free RAM: {1:4}MB,Used RAM: {2:4}MB,Dsk Rd: {3:3.2f}MB/s,Dsk Wr: {4:3.2f}MB/sZ".format(tmpStr, freeMem, usedMem, readRate, writeRate))
     
-    ser.write(output)
+    ser.write(output.encode())
     ##print(output)
     ##print("{0}Free RAM: {1}MB,Used RAM: {2}MB,Disk Rd: {3:3.2f},Dsk Wr: {4:3.2f}Z".format(tmpStr, freeMem, usedMem, readRate, writeRate))
     
