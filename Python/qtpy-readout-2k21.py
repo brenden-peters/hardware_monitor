@@ -22,15 +22,15 @@ windowScale = 0.125 ## Ratio of application window to screen size;
                     ##   half the width and half the height = one quarter overall size   
 
 ## PREFIXES                
-gib = ("GiB", "gibi", 1073741824)    ## Divide a # of bytes by this to get the # of gibibytes
-gb = ("GB", "giga", 1000000000)     ## Divide a # of bytes by this to get the # of gigabytes
-mib = ("MiB", "mibi", 1048576)
-mb = ("MB", "mega", 1000000)
-kib = ("kiB", "kilo", 1024)
+giB = ("GiB", "gibi", 1073741824)    ## Divide a # of bytes by this to get the # of gibibytes
+gB = ("GB", "giga", 1000000000)     ## Divide a # of bytes by this to get the # of gigabytes
+miB = ("MiB", "mibi", 1048576)
+mB = ("MB", "mega", 1000000)
+kiB = ("kiB", "kilo", 1024)
 noPrefix = ("B", "", 1)
 
-storMult = gb       ## Display storage info in units of mibibytes, megabytes, gigabytes, etc.
-netMult = noPrefix       ## Display network info in units of ... etc. 
+storMult = gB       ## Display storage info in units of mibibytes, megabytes, gigabytes, etc.
+netMult =  mB      ## Display network info in units of ... etc. 
 
 
 ### FIXME: fix this thing 
@@ -43,6 +43,7 @@ mem = pea.virtual_memory()
 parts = pea.disk_partitions(all = False)
 allTexts = {}
 oldDiskSpeed = {'Read':0, 'Write':0, 'time':0}
+oldNetworkRates = {"default":{'rx':0, 'tx':0, 'time':0}}
 printerText = ''
                    
 
@@ -63,11 +64,6 @@ class mainFrame(QWidget):
         allTexts['Memory'] = ""
         allTexts['Disk'] = ""
         allTexts['Networks'] = ""
-        
-        self.text = allTexts['Processor']
-        self.text += allTexts['Memory']
-        self.text += allTexts['Disk']
-        self.text += allTexts['Networks']
         
         mainLayout = QVBoxLayout()
         mainLayout.addStretch(1)
@@ -245,19 +241,36 @@ class infoGetter(QThread):
             allTexts['Networks'] = "Networks:\n"
             netInterfaces = pea.net_if_addrs()
             netInterfaces = filter(self.filterNetInterfaces, netInterfaces.items())
-            networkIO = pea.net_io_counters(pernic=True)
-            pea.net_io_counters.cache_clear()
+            networkIO = pea.net_io_counters(pernic=True)#, nowrap=False)
+            #pea.net_io_counters.cache_clear()
             
             for net in netInterfaces:
                 key = net[0]
                 ip4 = "n/a"
                 ip6 = "n/a"
                 mac = "n/a"
+                print(oldNetworkRates.keys())
+                if key not in oldNetworkRates.keys():
+                    oldNetworkRates[key] = oldNetworkRates["default"]
                 
-                curDataIn = (networkIO[key].bytes_recv / netMult[2])
-                curDataOut = (networkIO[key].bytes_sent / netMult[2])
+                curTime = time()
+                curDataIn = networkIO[key].bytes_recv
+                curDataOut = networkIO[key].bytes_sent
                 
+                print("new {net}: {cur}".format(net=key,cur=curDataIn))
+                print("old {net}: {cur}".format(net=key,cur=oldNetworkRates[key]["rx"]))
+                #print(oldNetworkRates[key]["rx"])
                 
+                dDataIn = (curDataIn - oldNetworkRates[key]["rx"])
+                dDataOut = (curDataOut - oldNetworkRates[key]["tx"])
+                dTime = (curTime - oldNetworkRates[key]["time"])
+                
+                dataInRate = ((dDataIn / dTime) / netMult[2])
+                dataOutRate = ((dDataOut / dTime) / netMult[2])
+                
+                oldNetworkRates[key]["rx"] = curDataIn
+                oldNetworkRates[key]["tx"] = curDataOut
+                oldNetworkRates[key]["time"] = curTime
                 
                 for addressType in net[1]:
                     if addressType.family == socket.AF_INET:
@@ -267,8 +280,8 @@ class infoGetter(QThread):
                     elif addressType.family == pea.AF_LINK:
                         mac = addressType.address
                 allTexts['Networks'] += "{net}:\n    ipv4: {v4}\n    ipv6: {v6}\n    MAC: {MAC}\n".format(net = key, v4 = ip4, v6 = ip6, MAC = mac)
-                allTexts['Networks'] += "    {unit}bytes rec.: {rec}\n    {unit}bytes sent: {sent}\n".format(unit = netMult[1], rec = curDataIn, sent = curDataOut)
-                #allTexts['Networks'] += "    {rec}{unit}/s in\n    {sent}{unit}/s out".format(rec = )
+                allTexts['Networks'] += "    {unit}bytes rec.: {rec}\n    {unit}bytes sent: {sent}\n".format(unit = netMult[1], rec = curDataIn/netMult[2], sent = curDataOut/netMult[2])
+                allTexts['Networks'] += "    rx: {rec:.1f} {unit}/s\n    tx: {sent:.1f} {unit}/s\n".format(rec = dataInRate, unit = netMult[0], sent = dataOutRate)
             
             
             
