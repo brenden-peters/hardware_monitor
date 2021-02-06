@@ -26,11 +26,12 @@ giB = ("GiB", "gibi", 1073741824)    ## Divide a # of bytes by this to get the #
 gB = ("GB", "giga", 1000000000)     ## Divide a # of bytes by this to get the # of gigabytes
 miB = ("MiB", "mibi", 1048576)
 mB = ("MB", "mega", 1000000)
-kiB = ("kiB", "kilo", 1024)
+kiB = ("kiB", "kibi", 1024)
+kB = ("kB", "kilo", 1000)
 noPrefix = ("B", "", 1)
 
 storMult = gB       ## Display storage info in units of mibibytes, megabytes, gigabytes, etc.
-netMult =  mB      ## Display network info in units of ... etc. 
+netMult =  kB      ## Display network info in units of ... etc. 
 
 
 ### FIXME: fix this thing 
@@ -43,7 +44,7 @@ mem = pea.virtual_memory()
 parts = pea.disk_partitions(all = False)
 allTexts = {}
 oldDiskSpeed = {'Read':0, 'Write':0, 'time':0}
-oldNetworkRates = {"default":{'rx':0, 'tx':0, 'time':0}}
+oldNetworkRates = {}
 printerText = ''
                    
 
@@ -249,27 +250,23 @@ class infoGetter(QThread):
                 ip4 = "n/a"
                 ip6 = "n/a"
                 mac = "n/a"
-                print(oldNetworkRates.keys())
+                
                 if key not in oldNetworkRates.keys():
-                    oldNetworkRates[key] = oldNetworkRates["default"]
+                    oldNetworkRates[key] = {"rx":0, "tx":0,"time":0}
                 
                 curTime = time()
-                curDataIn = networkIO[key].bytes_recv
-                curDataOut = networkIO[key].bytes_sent
+                curRx = networkIO[key].bytes_recv
+                curTx = networkIO[key].bytes_sent
                 
-                print("new {net}: {cur}".format(net=key,cur=curDataIn))
-                print("old {net}: {cur}".format(net=key,cur=oldNetworkRates[key]["rx"]))
-                #print(oldNetworkRates[key]["rx"])
-                
-                dDataIn = (curDataIn - oldNetworkRates[key]["rx"])
-                dDataOut = (curDataOut - oldNetworkRates[key]["tx"])
+                dDataIn = (curRx - oldNetworkRates[key]["rx"])
+                dDataOut = (curTx - oldNetworkRates[key]["tx"])
                 dTime = (curTime - oldNetworkRates[key]["time"])
                 
                 dataInRate = ((dDataIn / dTime) / netMult[2])
-                dataOutRate = ((dDataOut / dTime) / netMult[2])
+                dataOutRate = ((dDataOut / dTime) / netMult[2])   
                 
-                oldNetworkRates[key]["rx"] = curDataIn
-                oldNetworkRates[key]["tx"] = curDataOut
+                oldNetworkRates[key]["rx"] = curRx
+                oldNetworkRates[key]["tx"] = curTx
                 oldNetworkRates[key]["time"] = curTime
                 
                 for addressType in net[1]:
@@ -280,7 +277,7 @@ class infoGetter(QThread):
                     elif addressType.family == pea.AF_LINK:
                         mac = addressType.address
                 allTexts['Networks'] += "{net}:\n    ipv4: {v4}\n    ipv6: {v6}\n    MAC: {MAC}\n".format(net = key, v4 = ip4, v6 = ip6, MAC = mac)
-                allTexts['Networks'] += "    {unit}bytes rec.: {rec}\n    {unit}bytes sent: {sent}\n".format(unit = netMult[1], rec = curDataIn/netMult[2], sent = curDataOut/netMult[2])
+                allTexts['Networks'] += "    {unit}bytes rec.: {rec}\n    {unit}bytes sent: {sent}\n".format(unit = netMult[1], rec = curRx/netMult[2], sent = curTx/netMult[2])
                 allTexts['Networks'] += "    rx: {rec:.1f} {unit}/s\n    tx: {sent:.1f} {unit}/s\n".format(rec = dataInRate, unit = netMult[0], sent = dataOutRate)
             
             
